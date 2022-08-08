@@ -1,4 +1,4 @@
-const { expect } = require('chai');
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { it } = require("mocha");
 
@@ -14,19 +14,20 @@ const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 // `describe` receives the name of a section of your test suite, and a
 // callback. The callback must define the tests of that section. This callback
 // can't be an async function.
-describe("Token WolftToken", function () {
+describe("Token WolftTokenLock", function () {
   // We define a fixture to reuse the same setup in every test. We use
   // loadFixture to run this setup once, snapshot that state, and reset Hardhat
   // Network to that snapshopt in every test.
   async function deployTokenFixture() {
     // Get the ContractFactory and Signers here.
-    const Token = await ethers.getContractFactory("WolftToken");
+    const Token = await ethers.getContractFactory("WolftTokenLock");
     const [owner, addr1, addr2] = await ethers.getSigners();
 
     // To deploy our contract, we just have to call Token.deploy() and await
     // its deployed() method, which happens onces its transaction has been
     // mined.
-    const hardhatToken = await Token.deploy();
+    const timeLock = 1659926586;
+    const hardhatToken = await Token.deploy(timeLock);
 
     await hardhatToken.deployed();
 
@@ -110,6 +111,45 @@ describe("Token WolftToken", function () {
       // Owner balance shouldn't have changed.
       expect(await hardhatToken.balanceOf(owner.address)).to.equal(
         initialOwnerBalance
+      );
+    });
+  });
+
+  describe("Transactions LOCK", function () {
+    it("Should fail if sender doesn't owner tokens | LOCK: 1672531201", async function () {
+      //
+      const TokenLock = await ethers.getContractFactory("WolftTokenLock");
+      const [owner, addr1, addr2] = await ethers.getSigners();
+
+      // To deploy our contract, we just have to call Token.deploy() and await
+      // its deployed() method, which happens onces its transaction has been
+      // mined.
+      const timeLock = 1672531201;
+      const hardhatTokenLock = await TokenLock.connect(owner).deploy(timeLock);
+
+      await hardhatTokenLock.connect(owner).deployed();
+
+      const initialOwnerBalance = await hardhatTokenLock.balanceOf(owner.address);
+      console.log(initialOwnerBalance);
+
+      //mint 500 token lock addr1 
+      const vlTransfer = ethers.utils.parseEther('500');
+      await hardhatTokenLock.connect(owner).mint(addr1.address, vlTransfer);
+
+      const addr1Balance = await hardhatTokenLock.balanceOf(addr1.address);
+      console.log(addr1Balance);
+
+      // Try to send token from addr1  to addr2 (500 tokens). - Lock 
+      // `require` will evaluate false and revert the transaction.      
+      await expect(
+        hardhatTokenLock.connect(addr1).transfer(addr2.address, vlTransfer)
+      ).to.be.revertedWith("blocking until:1672531201");
+
+      // addr1 balance shouldn't have changed.
+      let bl = await hardhatTokenLock.balanceOf(addr1.address); 
+      console.log(bl);
+      expect(await hardhatTokenLock.balanceOf(addr1.address)).to.equal(
+        addr1Balance
       );
     });
   });

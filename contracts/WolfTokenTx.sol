@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "hardhat/console.sol";
 
 contract WolftTokenTx is ERC20, ERC20Burnable, Pausable, AccessControl {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     using SafeMath for uint256;
+    uint256 constant TAX_BURN = 5;
 
     constructor() ERC20("WolftTokenTx", "WTKX") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -32,62 +32,36 @@ contract WolftTokenTx is ERC20, ERC20Burnable, Pausable, AccessControl {
         _mint(to, amount);
     }
 
-    function _beforeTokenTransfer(
+    function transfer(address to, uint256 amount)
+        public
+        virtual
+        override
+        returns (bool)
+    {
+        address owner = _msgSender();
+        uint256 burnTax = calcTax(amount);
+        _burn(owner, burnTax);
+        uint256 amountMinusTax = amount.sub(burnTax);
+        _transfer(owner, to, amountMinusTax);
+        return true;
+    }
+
+    function transferFrom(
         address from,
         address to,
         uint256 amount
-    ) internal override whenNotPaused {
-
-       uint256 tax = _calcTax(amount);
-       console.log("TAX:");
-       console.log(tax);
-       _burn(from, tax);
-       super._beforeTokenTransfer(from, to, amount);
+    ) public virtual override returns (bool) {
+        address spender = _msgSender();
+        uint256 burnTax = calcTax(amount);
+        _spendAllowance(from, spender, amount);
+        _burn(_msgSender(), burnTax);
+        uint256 amountMinusTax = amount.sub(burnTax);
+        _transfer(from, to, amountMinusTax);
+        return true;
     }
 
-    function _calcTax(uint256 amount) internal returns (uint256) {
-         uint BURN_RATE  = 5 ; 
-         console.log(amount);
-        uint taxPercent = 5; 
-        uint256 precision = 2;
-        //uint256 percent = taxPercent.mul(10**precision);
-        //uint256 newamount = amount.mul(10**precision);
-
-        //uint256 tax  =  newamount.mul(percent).div(10**precision);
-         console.log('-----------------');
-        //console.log(tax);
-        //console.log(percent);
-       
-          console.log('------------------');
-          console.log(amount.div(20));
-          console.log(amount.sub(amount.div(20)));
-          uint burnAmount = (amount * BURN_RATE / 100);
-
-          console.log(burnAmount);
-         uint256 tax  = amount.div(20);
-        //amount.sub()
-         
+    function calcTax(uint256 amount) public pure returns (uint256) {
+        uint256 tax = amount.mul(TAX_BURN).div(100);
         return (tax);
-    }
-
-    function _taxTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal {
-
-         
-
-    }
-
-    function getPercentage(uint256 x) internal view returns (uint256) {
-       // uint256 high = 632885842;
-        //uint256 low = 316442921;
-        uint256 precision = 2;
-
-        //require(x >= low, "Number too low");
-        //require(x <= high, "Number too high");
-
-        return x.mul(10**precision);
     }
 }
