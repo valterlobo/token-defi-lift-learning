@@ -4,21 +4,35 @@
 // You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
-const hre = require("hardhat");
+const hre = require('hardhat');
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
 
-  const lockedAmount = hre.ethers.utils.parseEther("1");
+  //WolftTokenTx
+  const WolftTokenTx = await hre.ethers.getContractFactory('WolftTokenTx');
+  const wolftTokenTx = await WolftTokenTx.deploy();
+  await wolftTokenTx.deployed();
+  console.log('WolftTokenTx deployed to:', wolftTokenTx.address);
 
-  const Lock = await hre.ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  //WolftToken
+  const WolftToken = await hre.ethers.getContractFactory('WolftToken');
+  const wolftToken = await WolftToken.deploy();
+  await wolftToken.deployed();
+  console.log('WolftToken deployed to:', wolftToken.address);
 
-  await lock.deployed();
+  //WolftTokenLock
+  let timeLock = 1672531201;
+  const WolftTokenLock = await hre.ethers.getContractFactory('WolftTokenLock');
+  const wolftTokenLock = await WolftTokenLock.deploy(timeLock);
+  await wolftTokenLock.deployed();
+  console.log('WolftTokenLock deployed to:', wolftTokenLock.address);
 
-  console.log("Lock with 1 ETH deployed to:", lock.address);
+  //WolfSwap
+  const WolfSwap = await hre.ethers.getContractFactory('WolfSwap');
+  const wolfSwap = await WolfSwap.deploy(wolftToken.address);
+  await wolfSwap.deployed();
+  console.log('WolfSwap deployed to:', wolfSwap.address);
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere
