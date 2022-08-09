@@ -1,6 +1,6 @@
 const { expect } = require('chai');
-const { ethers } = require("hardhat");
-const { it } = require("mocha");
+const { ethers } = require('hardhat');
+const { it } = require('mocha');
 
 // We use `loadFixture` to share common setups (or fixtures) between tests.
 // Using this simplifies your tests and makes them run faster, by taking
@@ -32,7 +32,7 @@ describe('Token WolftTokenTx', () => {
 
     // mint tokens
     const balance = await hardhatToken.balanceOf(owner.address);
-    console.log(balance);
+    // console.log(balance);
     // await hardhatToken.mint(owner,1000);
 
     // Fixtures can return anything you consider useful for your tests
@@ -80,12 +80,14 @@ describe('Token WolftTokenTx', () => {
       const minusVlTransfer = vlTransfer.mul(-1);
       const tax = await hardhatToken.calcTax(vlTransfer);
       const newVlTransfer = ethers.BigNumber.from(vlTransfer).sub(tax);
+      /*
       console.log('-----------------------');
       console.log(vlTransfer);
       console.log(minusVlTransfer);
       console.log(newVlTransfer);
       console.log(tax);
       console.log('-----------------------');
+      */
 
       await expect(
         hardhatToken.transfer(addr1.address, vlTransfer),
