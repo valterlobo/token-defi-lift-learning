@@ -1,6 +1,7 @@
 require('@nomicfoundation/hardhat-toolbox');
 require('@nomiclabs/hardhat-solhint');
 require('solidity-coverage');
+require("@nomiclabs/hardhat-etherscan");
 require('dotenv').config();
 
 const { WALLET_PRIVATE_KEY } = process.env;
